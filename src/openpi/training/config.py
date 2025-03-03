@@ -589,14 +589,9 @@ _CONFIGS = [
         ),
         # Use NoOp loader for training from scratch
         weight_loader=weight_loaders.NoOpWeightLoader(),
-        num_train_steps=20_050,
-        # freeze_filter remains the same
-        freeze_filter=pi0_fast.Pi0FASTConfig(
-            action_dim=7, 
-            action_horizon=10, 
-            max_token_len=180,
-            paligemma_variant="tiny_gemma"
-        ).get_freeze_filter(),
+        num_train_steps=30_000,
+        # no freeze filter
+        freeze_filter=None,
         # Turn off EMA for LoRA finetuning to save memory
         ema_decay=None,
     ),
