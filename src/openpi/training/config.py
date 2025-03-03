@@ -565,11 +565,39 @@ _CONFIGS = [
             ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_fast_base/params"),
-        num_train_steps=20_050,
+        num_train_steps=30_000,
         freeze_filter=pi0_fast.Pi0FASTConfig(
             action_dim=7, action_horizon=10, max_token_len=180, paligemma_variant="gemma_2b_lora"
         ).get_freeze_filter(),
         # Turn off EMA for LoRA finetuning.
+        ema_decay=None,
+    ),
+    TrainConfig(
+        name="tiny_pi0_fast_libero",
+        model=pi0_fast.Pi0FASTConfig(
+            action_dim=7, 
+            action_horizon=10, 
+            max_token_len=180,
+            paligemma_variant="tiny_gemma",
+        ),
+        data=LeRobotLiberoDataConfig(
+            repo_id="physical-intelligence/libero",
+            base_config=DataConfig(
+                local_files_only=False,
+                prompt_from_task=True,
+            ),
+        ),
+        # Use NoOp loader for training from scratch
+        weight_loader=weight_loaders.NoOpWeightLoader(),
+        num_train_steps=20_050,
+        # freeze_filter remains the same
+        freeze_filter=pi0_fast.Pi0FASTConfig(
+            action_dim=7, 
+            action_horizon=10, 
+            max_token_len=180,
+            paligemma_variant="tiny_gemma"
+        ).get_freeze_filter(),
+        # Turn off EMA for LoRA finetuning to save memory
         ema_decay=None,
     ),
     #
