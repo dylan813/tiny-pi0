@@ -75,18 +75,18 @@ def get_config(variant):
             {
                 "variant": variant,
                 "width": 1024,
-                "depth": 18,
-                "mlp_dim": 16_384,
+                "depth": 12,
+                "mlp_dim": 4096,
                 "num_heads": 8,
                 "num_kv_heads": 1,
-                "head_dim": 256,
+                "head_dim": 128,
                 "norm_eps": 1e-6,
                 "vocab_size": 257_152,
                 "scan": True,
                 "remat_policy": "nothing_saveable",
                 "lora_configs": {
-                    "attn": lora.LoRAConfig(rank=16, alpha=16.0),
-                    "ffn": lora.LoRAConfig(rank=16, alpha=16.0),
+                    "attn": lora.LoRAConfig(rank=4, alpha=8.0),
+                    "ffn": lora.LoRAConfig(rank=4, alpha=8.0),
                 },
             }
         )
