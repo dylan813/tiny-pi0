@@ -590,8 +590,8 @@ _CONFIGS = [
         # Use NoOp loader for training from scratch
         weight_loader=weight_loaders.NoOpWeightLoader(),
         num_train_steps=30_000,
-        # no freeze filter
-        freeze_filter=None,
+        # Explicitly set freeze_filter to allow all parameters to be trained
+        freeze_filter=nnx.Nothing(),  # This ensures nothing is frozen
         # Turn off EMA for LoRA finetuning to save memory
         ema_decay=None,
     ),

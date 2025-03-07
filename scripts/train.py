@@ -141,13 +141,14 @@ def train_step(
 ) -> tuple[training_utils.TrainState, dict[str, at.Array]]:
     model = nnx.merge(state.model_def, state.params)
     model.train()
-
+    
     @at.typecheck
     def loss_fn(
         model: _model.BaseModel, rng: at.KeyArrayLike, observation: _model.Observation, actions: _model.Actions
     ):
         chunked_loss = model.compute_loss(rng, observation, actions, train=True)
-        return jnp.mean(chunked_loss)
+        mean_loss = jnp.mean(chunked_loss)
+        return mean_loss
 
     train_rng = jax.random.fold_in(rng, state.step)
     observation, actions = batch
@@ -226,6 +227,32 @@ def main(config: _config.TrainConfig):
     batch = next(data_iter)
     logging.info(f"Initialized data loader:\n{training_utils.array_tree_to_info(batch)}")
 
+    # Add data validation
+    def validate_batch(batch):
+        obs, actions = batch
+        
+        # Check ranges of values without using jnp.any which might not work with all pytrees
+        def check_array(arr, name):
+            if isinstance(arr, jnp.ndarray):
+                arr_min = float(jnp.min(arr))
+                arr_max = float(jnp.max(arr))
+                logging.info(f"{name} range: [{arr_min}, {arr_max}]")
+                if jnp.isnan(arr_min) or jnp.isnan(arr_max) or jnp.isinf(arr_min) or jnp.isinf(arr_max):
+                    logging.error(f"Found NaN/Inf in {name}!")
+        
+        # Check images
+        for k, v in obs.images.items():
+            check_array(v, f"Image {k}")
+        
+        # Check state
+        if hasattr(obs, 'state') and obs.state is not None:
+            check_array(obs.state, "State")
+        
+        # Check actions
+        check_array(actions, "Actions")
+
+    validate_batch(batch)
+
     train_state, train_state_sharding = init_train_state(config, init_rng, mesh, resume=resuming)
     jax.block_until_ready(train_state)
     logging.info(f"Initialized train state:\n{training_utils.array_tree_to_info(train_state.params)}")
@@ -252,6 +279,11 @@ def main(config: _config.TrainConfig):
     for step in pbar:
         with sharding.set_mesh(mesh):
             train_state, info = ptrain_step(train_rng, train_state, batch)
+        
+        # Print only for the first few steps to verify training is working
+        if step < 5:
+            print(f"Step {step}: Loss = {float(info['loss']):.4f}, Grad norm = {float(info['grad_norm']):.4f}")
+        
         infos.append(info)
         if step % config.log_interval == 0:
             stacked_infos = common_utils.stack_forest(infos)

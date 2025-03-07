@@ -100,7 +100,7 @@ class Einsum(nn.Module):
     @nn.compact
     def __call__(self, eqn, x):
         dtype = x.dtype  # original dtype, could be half-precision
-        w = self.param("w", nn.initializers.zeros_init(), self.shape).astype(dtype)
+        w = self.param("w", nn.initializers.truncated_normal(stddev=0.02), self.shape).astype(dtype)
         return jnp.einsum(eqn, x, w)
 
 
@@ -128,7 +128,7 @@ class Embedder(nn.Module):
     def setup(self):
         self.input_embedding_table = self.param(
             "input_embedding",
-            nn.initializers.zeros_init(),
+            nn.initializers.normal(stddev=0.02),
             (self.vocab_size, self.embed_dim),
         )
 
