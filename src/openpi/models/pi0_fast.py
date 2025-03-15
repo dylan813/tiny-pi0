@@ -129,6 +129,11 @@ class Pi0FAST(_model.BaseModel):
     def __init__(self, config: Pi0FASTConfig, rngs: nnx.Rngs):
         super().__init__(config.action_dim, config.action_horizon, config.max_token_len)
         paligemma_config = _gemma.get_config(config.paligemma_variant)
+        
+        # Log the model configuration being used
+        logger.info(f"Initializing Pi0FAST with variant: {config.paligemma_variant}")
+        logger.info(f"Model width: {paligemma_config.width}, depth: {paligemma_config.depth}")
+        
         # TODO: rewrite gemma in NNX. For now, use bridge.
         llm = nnx_bridge.ToNNX(
             _gemma.Module(
@@ -138,10 +143,14 @@ class Pi0FAST(_model.BaseModel):
             )
         )
         llm.lazy_init(rngs=rngs, method="init")
+        
+        # For tiny_gemma, use smaller SigLIP model
+        siglip_variant = "S/14" if config.paligemma_variant == "tiny_gemma" else "So400m/14"
+        
         img = nnx_bridge.ToNNX(
             _siglip.Module(
                 num_classes=paligemma_config.width,
-                variant="So400m/14",
+                variant=siglip_variant,
                 pool_type="none",
                 scan=True,
                 dtype_mm=config.dtype,
