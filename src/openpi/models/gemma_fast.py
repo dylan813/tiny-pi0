@@ -75,7 +75,7 @@ def get_config(variant):
             {
                 "variant": variant,
                 "width": 1024,
-                "depth": 12,
+                "depth": 18,
                 "mlp_dim": 4096,
                 "num_heads": 8,
                 "num_kv_heads": 1,
